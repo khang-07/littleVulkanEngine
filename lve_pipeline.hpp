@@ -6,7 +6,21 @@
 
 namespace lve {
 // outside of class bc used with many pipelines
-struct PipelineConfigInfo {};
+struct PipelineConfigInfo {
+    // to be config-ed in defaultPipelineConfigInfo()
+    VkViewport viewport;
+    VkRect2D scissor;
+    VkPipelineViewportStateCreateInfo viewportInfo;
+    VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
+    VkPipelineRasterizationStateCreateInfo rasterizationInfo;
+    VkPipelineMultisampleStateCreateInfo multisampleInfo;
+    VkPipelineColorBlendAttachmentState colorBlendAttachment;
+    VkPipelineColorBlendStateCreateInfo colorBlendInfo;
+    VkPipelineDepthStencilStateCreateInfo depthStencilInfo;
+    VkPipelineLayout pipelineLayout = nullptr;
+    VkRenderPass renderPass = nullptr;
+    uint32_t subpass = 0;
+};
 
 class LvePipeline {
     public:
@@ -15,7 +29,7 @@ class LvePipeline {
         const std::string& vertFilepath,  
         const std::string& fragFilepath, 
         const PipelineConfigInfo& configInfo);
-    ~LvePipeline() {};
+    ~LvePipeline();
     
     LvePipeline(const LvePipeline &) = delete;
     LvePipeline operator=(const LvePipeline &) = delete;
