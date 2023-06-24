@@ -3,7 +3,7 @@
 #include "lve_window.hpp"
 #include "lve_pipeline.hpp"
 
-namespace lve {
+namespace lve { // hi
 class FirstApp {
     public:
     static constexpr int WIDTH = 800;
