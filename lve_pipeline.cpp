@@ -92,6 +92,9 @@ void LvePipeline::createGraphicsPipeline(
 
     // transfer configInfo.* to pipelineInfo.*
     VkGraphicsPipelineCreateInfo pipelineInfo{};
+
+    // pipelineInfo.pNext = NULL;
+
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = 2;
     pipelineInfo.pStages = shaderStages; // pStages = programmable stages
@@ -141,12 +144,12 @@ void LvePipeline::createShaderModule(
     }
 }
 
-PipelineConfigInfo LvePipeline::defaultPipelineConfigInfo(uint32_t width, uint32_t height) {
-    PipelineConfigInfo configInfo{};
-
+PipelineConfigInfo LvePipeline::defaultPipelineConfigInfo(PipelineConfigInfo& configInfo, uint32_t width, uint32_t height) {
     configInfo.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; // render w triangles
-    configInfo.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE; // break up strip d'trianglev
+    configInfo.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE; // break up strip d'triangle
+
+    // configInfo.inputAssemblyInfo.pNext = NULL;
 
     // desc trans bw pipeline-out, target-in
     configInfo.viewport.x = 0.0f;
@@ -218,5 +221,10 @@ PipelineConfigInfo LvePipeline::defaultPipelineConfigInfo(uint32_t width, uint32
     configInfo.depthStencilInfo.back = {}; // optional
 
     return configInfo;
+}
+
+void LvePipeline::bind(VkCommandBuffer commandBuffer) {
+    // other pipeline points : compute, ray trace
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 }
 }
