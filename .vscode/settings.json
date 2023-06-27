@@ -69,5 +69,6 @@
         "set": "cpp",
         "stack": "cpp",
         "unordered_set": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "enabled"
 }

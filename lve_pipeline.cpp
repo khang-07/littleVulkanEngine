@@ -12,7 +12,7 @@ LvePipeline::LvePipeline(
     LveDevice &device, 
     const std::string& vertFilepath,  
     const std::string& fragFilepath, 
-    const PipelineConfigInfo& configInfo)
+    PipelineConfigInfo& configInfo)
     : lveDevice{device} {
     createGraphicsPipeline(vertFilepath, fragFilepath, configInfo);
     }
@@ -92,9 +92,6 @@ void LvePipeline::createGraphicsPipeline(
 
     // transfer configInfo.* to pipelineInfo.*
     VkGraphicsPipelineCreateInfo pipelineInfo{};
-
-    // pipelineInfo.pNext = NULL;
-
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = 2;
     pipelineInfo.pStages = shaderStages; // pStages = programmable stages
