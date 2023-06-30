@@ -1,6 +1,5 @@
 #include "first_app.hpp"
 
-#include <stdexcept>
 #include <array>
 
 namespace lve {
@@ -13,6 +12,12 @@ FirstApp::FirstApp() {
 
 FirstApp::~FirstApp() {
     vkDestroyPipelineLayout(lveDevice.device(), pipelineLayout, nullptr);
+    vkFreeCommandBuffers(
+        lveDevice.device(),
+        lveDevice.getCommandPool(),
+        static_cast<uint32_t>(commandBuffers.size()),
+        commandBuffers.data());
+    commandBuffers.clear();
 }
 
 void FirstApp::run() {
@@ -25,7 +30,7 @@ void FirstApp::run() {
 }
 
 void FirstApp::createPipelineLayout() {
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 0; // bc empty layout : no textures yet
     pipelineLayoutInfo.pSetLayouts = nullptr;
@@ -39,14 +44,12 @@ void FirstApp::createPipelineLayout() {
 }
 
 void FirstApp::createPipeline() {
-  PipelineConfigInfo pipelineConfig;
-  LvePipeline::defaultPipelineConfigInfo(
-      pipelineConfig,
-      lveSwapChain.width(),
-      lveSwapChain.height());
+    auto pipelineConfig = LvePipeline::defaultPipelineConfigInfo(
+        lveSwapChain.width(),
+        lveSwapChain.height());
     pipelineConfig.renderPass = lveSwapChain.getRenderPass();
     pipelineConfig.pipelineLayout = pipelineLayout;
-    lvePipeline = std::make_unique<LvePipeline>(
+    simplePipeline = std::make_unique<LvePipeline>(
         lveDevice,
         "./shaders/simple_shader.vert.spv",
         "./shaders/simple_shader.frag.spv",
@@ -56,7 +59,7 @@ void FirstApp::createPipeline() {
 void FirstApp::createCommandBuffers() { // meanwhile, void LveDevice::createCommandPool() {}
     commandBuffers.resize(lveSwapChain.imageCount());
 
-    VkCommandBufferAllocateInfo allocInfo{};
+    VkCommandBufferAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandPool = lveDevice.getCommandPool(); // use cmd pool mem for cmd buff
@@ -67,16 +70,18 @@ void FirstApp::createCommandBuffers() { // meanwhile, void LveDevice::createComm
         throw std::runtime_error("failed to allocate command buffers");
     }
 
-    for (int i = 0; i < commandBuffers.size(); i++) {
-        VkCommandBufferBeginInfo beginInfo{};
+    for (size_t i = 0; i < commandBuffers.size(); i++) {
+        VkCommandBufferBeginInfo beginInfo = {};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = 0;
+        beginInfo.pInheritanceInfo = nullptr;
         
         if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo)
         != VK_SUCCESS) {
             throw std::runtime_error("failed to begin recording command buffer");
         }
 
-        VkRenderPassBeginInfo renderPassInfo{};
+        VkRenderPassBeginInfo renderPassInfo = {};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = lveSwapChain.getRenderPass();
         renderPassInfo.framebuffer = lveSwapChain.getFrameBuffer(i);
@@ -84,7 +89,7 @@ void FirstApp::createCommandBuffers() { // meanwhile, void LveDevice::createComm
         renderPassInfo.renderArea.offset = {0, 0}; // origin + borders(ish)
         renderPassInfo.renderArea.extent = lveSwapChain.getSwapChainExtent();
 
-        std::array<VkClearValue, 2> clearValues{};
+        std::array<VkClearValue, 2> clearValues = {};
         clearValues[0].color = {0.1f, 0.1f, 0.1f, 1.0}; // R G B A
         clearValues[1].depthStencil = {1.0f, 0};
         // [0] color : [1] depth -> find code
@@ -94,7 +99,7 @@ void FirstApp::createCommandBuffers() { // meanwhile, void LveDevice::createComm
         // inline : only primary
         vkCmdBeginRenderPass(commandBuffers[1], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        lvePipeline->bind(commandBuffers[i]);
+        simplePipeline->bind(commandBuffers[i]);
         vkCmdDraw(commandBuffers[i], 3, 1, 0, 0); // 3 vertices : 1 instance : 0 offsets : 0 First Instance?
         
         vkCmdEndRenderPass(commandBuffers[i]);

@@ -1,4 +1,3 @@
-#include "lve_device.hpp"
 #include "lve_pipeline.hpp"
 
 #include <fstream>
@@ -12,7 +11,7 @@ LvePipeline::LvePipeline(
     LveDevice &device, 
     const std::string& vertFilepath,  
     const std::string& fragFilepath, 
-    PipelineConfigInfo& configInfo)
+    const PipelineConfigInfo& configInfo)
     : lveDevice{device} {
     createGraphicsPipeline(vertFilepath, fragFilepath, configInfo);
     }
@@ -76,19 +75,12 @@ void LvePipeline::createGraphicsPipeline(
     shaderStages[1].pSpecializationInfo = nullptr;
     
 
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexAttributeDescriptionCount = 0;
+    vertexInputInfo.pVertexAttributeDescriptions = nullptr;
     vertexInputInfo.vertexBindingDescriptionCount = 0;
     vertexInputInfo.pVertexBindingDescriptions = nullptr;
-    vertexInputInfo.pVertexAttributeDescriptions = nullptr;
-
-    VkPipelineViewportStateCreateInfo viewportInfo{};
-    viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewportInfo.viewportCount = 1;
-    viewportInfo.pViewports = &configInfo.viewport;
-    viewportInfo.scissorCount = 1;
-    viewportInfo.pScissors = &configInfo.scissor;
 
     // transfer configInfo.* to pipelineInfo.*
     VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -97,7 +89,7 @@ void LvePipeline::createGraphicsPipeline(
     pipelineInfo.pStages = shaderStages; // pStages = programmable stages
     pipelineInfo.pVertexInputState = &vertexInputInfo;
     pipelineInfo.pInputAssemblyState = &configInfo.inputAssemblyInfo;
-    pipelineInfo.pViewportState = &viewportInfo;
+    pipelineInfo.pViewportState = &configInfo.viewportInfo;
     pipelineInfo.pRasterizationState = &configInfo.rasterizationInfo;
     pipelineInfo.pMultisampleState = &configInfo.multisampleInfo;
     pipelineInfo.pColorBlendState = &configInfo.colorBlendInfo;
@@ -130,7 +122,7 @@ void LvePipeline::createShaderModule(
     const std::vector<char>& code, 
     VkShaderModule* shaderModule) {
     // instead of calling function(), use struct{}
-    VkShaderModuleCreateInfo createInfo{};
+    VkShaderModuleCreateInfo createInfo = {};
         
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = code.size();
@@ -141,7 +133,14 @@ void LvePipeline::createShaderModule(
     }
 }
 
-PipelineConfigInfo LvePipeline::defaultPipelineConfigInfo(PipelineConfigInfo& configInfo, uint32_t width, uint32_t height) {
+void LvePipeline::bind(VkCommandBuffer commandBuffer) {
+    // other pipeline points : compute, ray trace
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+}
+
+PipelineConfigInfo LvePipeline::defaultPipelineConfigInfo(uint32_t width, uint32_t height) {
+    PipelineConfigInfo configInfo = {};
+
     configInfo.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; // render w triangles
     configInfo.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE; // break up strip d'triangle
@@ -161,6 +160,12 @@ PipelineConfigInfo LvePipeline::defaultPipelineConfigInfo(PipelineConfigInfo& co
     // cuts off instead of squish
     configInfo.scissor.offset = {0, 0};
     configInfo.scissor.extent = {width, height};
+
+    configInfo.viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    configInfo.viewportInfo.viewportCount = 1;
+    configInfo.viewportInfo.pViewports = &configInfo.viewport;
+    configInfo.viewportInfo.scissorCount = 1;
+    configInfo.viewportInfo.pScissors = &configInfo.scissor;
 
     configInfo.rasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     configInfo.rasterizationInfo.depthClampEnable = VK_FALSE; // below 0 behind camera : above 1 too far
@@ -220,8 +225,4 @@ PipelineConfigInfo LvePipeline::defaultPipelineConfigInfo(PipelineConfigInfo& co
     return configInfo;
 }
 
-void LvePipeline::bind(VkCommandBuffer commandBuffer) {
-    // other pipeline points : compute, ray trace
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-}
 }

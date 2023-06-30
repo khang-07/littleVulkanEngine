@@ -1,8 +1,7 @@
 #pragma once
 
 #include "lve_device.hpp"
-
-#include <vulkan/vulkan.h>
+#include "lve_window.hpp"
 
 #include <string>
 #include <vector>
@@ -10,11 +9,15 @@
 namespace lve {
 
 class LveSwapChain {
-  public:
+    public:
     static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
-    LveSwapChain(LveDevice &deviceRef, VkExtent2D windowExtent);
-    ~LveSwapChain();
+    LveSwapChain(LveWindow &window, LveDevice &device) : window_{window}, device_{device} { init(); }
+    
+    ~LveSwapChain() {
+        cleanupSwapChain();
+        cleanupSyncObjects();
+    }
 
     LveSwapChain(const LveSwapChain &) = delete;
     void operator=(const LveSwapChain &) = delete;
@@ -22,6 +25,10 @@ class LveSwapChain {
     VkFramebuffer getFrameBuffer(int index) { return swapChainFramebuffers[index]; }
     VkRenderPass getRenderPass() { return renderPass; }
     VkImageView getImageView(int index) { return swapChainImageViews[index]; }
+
+    void recreateSwapChain();
+    void cleanupSwapChain();
+
     size_t imageCount() { return swapChainImages.size(); }
     VkFormat getSwapChainImageFormat() { return swapChainImageFormat; }
     VkExtent2D getSwapChainExtent() { return swapChainExtent; }
@@ -31,12 +38,15 @@ class LveSwapChain {
     float extentAspectRatio() {
         return static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height);
     }
+
     VkFormat findDepthFormat();
 
     VkResult acquireNextImage(uint32_t *imageIndex);
     VkResult submitCommandBuffers(const VkCommandBuffer *buffers, uint32_t *imageIndex);
 
  private:
+    void init();
+    void cleanupSyncObjects();
     void createSwapChain();
     void createImageViews();
     void createDepthResources();
@@ -44,12 +54,13 @@ class LveSwapChain {
     void createFramebuffers();
     void createSyncObjects();
 
-    // Helper functions
+    // helper functions
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(
         const std::vector<VkSurfaceFormatKHR> &availableFormats);
     VkPresentModeKHR chooseSwapPresentMode(
         const std::vector<VkPresentModeKHR> &availablePresentModes);
-    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
+    VkExtent2D chooseSwapExtent(
+        const VkSurfaceCapabilitiesKHR &capabilities);
 
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
@@ -63,8 +74,8 @@ class LveSwapChain {
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
 
-    LveDevice &device;
-    VkExtent2D windowExtent;
+    LveWindow &window_;
+    LveDevice &device_;
 
     VkSwapchainKHR swapChain;
 

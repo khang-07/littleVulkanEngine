@@ -30,9 +30,9 @@ class FirstApp {
 
     LveWindow lveWindow{WIDTH, HEIGHT, "wassup"};
     LveDevice lveDevice{lveWindow};
-    LveSwapChain lveSwapChain{lveDevice, lveWindow.getExtent()};
-    std::unique_ptr<LvePipeline> lvePipeline; // unique : auto memory manage
+    LveSwapChain lveSwapChain{lveWindow, lveDevice};
     VkPipelineLayout pipelineLayout;
+    std::unique_ptr<LvePipeline> simplePipeline; // unique : auto memory manage
     std::vector<VkCommandBuffer> commandBuffers;
 };
 }

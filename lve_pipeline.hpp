@@ -1,8 +1,9 @@
 #pragma once
 
+#include "lve_device.hpp"
+
 #include <string>
 #include <vector>
-#include "lve_device.hpp"
 
 namespace lve {
 // outside of class bc used with many pipelines
@@ -10,6 +11,7 @@ struct PipelineConfigInfo {
     // to be config-ed in defaultPipelineConfigInfo()
     VkViewport viewport;
     VkRect2D scissor;
+    VkPipelineViewportStateCreateInfo viewportInfo;
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
     VkPipelineRasterizationStateCreateInfo rasterizationInfo;
     VkPipelineMultisampleStateCreateInfo multisampleInfo;
@@ -27,18 +29,18 @@ class LvePipeline {
         LveDevice &device, 
         const std::string& vertFilepath,  
         const std::string& fragFilepath, 
-        PipelineConfigInfo& configInfo);
+        const PipelineConfigInfo& configInfo);
+
     ~LvePipeline();
     
     LvePipeline(const LvePipeline &) = delete;
-    LvePipeline operator=(const LvePipeline &) = delete;
+    void operator=(const LvePipeline &) = delete;
 
     void bind(VkCommandBuffer commandBuffer);
 
     static PipelineConfigInfo defaultPipelineConfigInfo(
-        PipelineConfigInfo& configInfo, 
-        u_int32_t width, 
-        u_int32_t height);
+        uint32_t width, 
+        uint32_t height);
 
     private:
     static std::vector<char> readFile(const std::string& filepath);
