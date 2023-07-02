@@ -87,11 +87,6 @@ void FirstApp::createCommandBuffers() { // meanwhile, void LveDevice::createComm
         beginInfo.flags = 0;
         beginInfo.pInheritanceInfo = nullptr;
         
-        if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo)
-        != VK_SUCCESS) {
-            throw std::runtime_error("failed to begin recording command buffer");
-        }
-
         VkRenderPassBeginInfo renderPassInfo = {};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = lveSwapChain.getRenderPass();
@@ -109,16 +104,14 @@ void FirstApp::createCommandBuffers() { // meanwhile, void LveDevice::createComm
 
         // inline : only primary
         vkBeginCommandBuffer(commandBuffers[i], &beginInfo);
-        vkCmdBeginRenderPass(commandBuffers[1], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         simplePipeline->bind(commandBuffers[i]);
         lveModel->bind(commandBuffers[i]);
         lveModel->draw(commandBuffers[i]);
-        
+
         vkCmdEndRenderPass(commandBuffers[i]);
-        if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to record command buffer");
-        }
+        vkEndCommandBuffer(commandBuffers[i]);
     }
 }
 
